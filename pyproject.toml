@@ -34,3 +34,6 @@ tracescribe = "tracescribe.cli:app"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["tracescribe*"]
+
+[tool.setuptools.package-data]
+tracescribe = ["templates/*", "fixtures/*"]

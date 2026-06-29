@@ -1,0 +1,41 @@
+---
+title: {{ epic.summary }}
+epic: {{ epic.key }}
+component: {{ epic.components[0] if epic.components else "general" }}
+quarter: {{ epic.fix_versions[0] if epic.fix_versions else "Unknown" }}
+assignee: {{ epic.assignee }}
+status: {{ epic.status }}
+generated: {{ generated_date }}
+---
+
+# {{ epic.summary }}
+
+**Epic:** `{{ epic.key }}` | **Assignee:** {{ epic.assignee }} | **Status:** {{ epic.status }}
+**Component:** {{ epic.components[0] if epic.components else "general" }} | **Quarter:** {{ epic.fix_versions[0] if epic.fix_versions else "Unknown" }}
+
+---
+
+## Overview
+
+{{ overview }}
+
+## Motivation
+
+{{ motivation }}
+
+## Technical Approach
+
+{{ technical_approach }}
+
+## Configuration & Usage
+
+{{ usage }}
+
+## Acceptance Criteria
+
+{{ epic.description }}
+
+## Related Links
+
+- Jira Epic: {{ jira_base_url }}/browse/{{ epic.key }}
+- Labels: {{ epic.labels | join(", ") if epic.labels else "none" }}
