@@ -7,6 +7,7 @@ from pathlib import Path
 import typer
 import yaml
 from rich.console import Console
+from rich.rule import Rule
 from rich.table import Table
 
 from tracescribe.config import ConfigError, load_config
@@ -26,6 +27,31 @@ console = Console()
 
 _CONFIG_DIR = Path.home() / ".tracescribe"
 _CONFIG_FILE = _CONFIG_DIR / "config.yaml"
+
+
+# ---------------------------------------------------------------------------
+# --version
+# ---------------------------------------------------------------------------
+
+
+def _version_callback(value: bool) -> None:
+    if value:
+        from tracescribe import __version__
+        typer.echo(f"tracescribe {__version__}")
+        raise typer.Exit()
+
+
+@app.callback()
+def main(
+    version: bool = typer.Option(
+        None,
+        "--version",
+        callback=_version_callback,
+        is_eager=True,
+        help="Print the version and exit.",
+    ),
+) -> None:
+    pass
 
 
 # ---------------------------------------------------------------------------
@@ -53,7 +79,115 @@ def generate(
     ),
 ) -> None:
     """Generate a Knowledge Center documentation page for an epic."""
-    typer.echo(f"Generating docs for {epic_key}...")
+    from tracescribe.github_client import GitHubError, create_doc_pr
+    from tracescribe.jira_client import JiraError, get_epic, get_epic_mock
+    from tracescribe.llm.base import LLMError
+    from tracescribe.llm.factory import get_llm_provider
+    from tracescribe.path_builder import build_doc_path
+    from tracescribe.prompts import (
+        motivation_prompt,
+        overview_prompt,
+        technical_approach_prompt,
+        usage_prompt,
+    )
+    from tracescribe.renderer import render_doc
+    from tracescribe.reviewer import review_loop
+
+    try:
+        # ── Step 1: Config ────────────────────────────────────────────────
+        if mock:
+            # In mock mode config is optional — use safe defaults for fields
+            # that may not be set (jira.base_url, github creds).
+            try:
+                config = load_config()
+            except ConfigError:
+                from tracescribe.config import GitHubConfig, JiraConfig, LLMConfig, TraceScribeConfig
+                config = TraceScribeConfig(
+                    jira=JiraConfig(base_url="https://jsw.ibm.com", pat="mock-pat"),
+                    github=GitHubConfig(token="mock-token", repo="instana/instana-knowledge-center"),
+                )
+        else:
+            config = load_config()
+        console.print("[green]  \u2714[/green] Config loaded")
+
+        # ── Step 2: Fetch epic ────────────────────────────────────────────
+        if mock:
+            epic = get_epic_mock()
+        else:
+            epic = get_epic(epic_key, config.jira)
+        console.print(
+            f"[green]  \u2714[/green] Fetched Jira epic: [bold]{epic.summary}[/bold] [{epic.key}]"
+        )
+
+        # ── Step 3: Build doc path ────────────────────────────────────────
+        doc_path = build_doc_path(epic)
+        console.print(f"[green]  \u2714[/green] Doc path: [dim]{doc_path}[/dim]")
+
+        # ── Step 4: Generate LLM prose ────────────────────────────────────
+        overview = motivation = technical_approach = usage = ""
+        if no_llm:
+            console.print("[dim]  \u2500 LLM skipped (--no-llm)[/dim]")
+        else:
+            with console.status("[bold]  Generating documentation\u2026[/bold]", spinner="dots"):
+                provider = get_llm_provider(config.llm)
+                overview = provider.generate(overview_prompt(epic))
+                motivation = provider.generate(motivation_prompt(epic))
+                technical_approach = provider.generate(technical_approach_prompt(epic))
+                usage = provider.generate(usage_prompt(epic))
+            console.print("[green]  \u2714[/green] Documentation generated")
+
+        # ── Step 5: Render doc ────────────────────────────────────────────
+        jira_base_url = getattr(config.jira, "base_url", None) or "https://jsw.ibm.com"
+        content = render_doc(
+            epic,
+            doc_path,
+            jira_base_url,
+            overview=overview,
+            motivation=motivation,
+            technical_approach=technical_approach,
+            usage=usage,
+        )
+
+        # ── Step 6: Dry-run — print and exit ─────────────────────────────
+        if dry_run:
+            console.print()
+            console.print(Rule("[dim]Generated document[/dim]"))
+            console.print(content)
+            console.print(Rule())
+            raise typer.Exit(0)
+
+        # ── Step 7: Interactive review loop ───────────────────────────────
+        console.print()
+        console.print(Rule("[bold]Review[/bold]"))
+        approved, final_content = review_loop(content, epic.key)
+        if not approved:
+            raise typer.Exit(0)
+
+        # ── Step 8: Create PR ─────────────────────────────────────────────
+        with console.status("[bold]  Creating pull request\u2026[/bold]", spinner="dots"):
+            pr = create_doc_pr(doc_path, final_content, epic, config.github)
+        console.print(f"[green]  \u2714[/green] PR created: [link={pr.url}]{pr.url}[/link]")
+
+    except ConfigError as exc:
+        console.print(
+            f"[red]  \u2718 Config error:[/red] {exc}\n"
+            "  Run: [bold]tracescribe config init[/bold]"
+        )
+        raise typer.Exit(code=1)
+    except JiraError as exc:
+        console.print(f"[red]  \u2718 Jira error:[/red] {exc}")
+        raise typer.Exit(code=1)
+    except LLMError as exc:
+        console.print(f"[red]  \u2718 LLM error:[/red] {exc}")
+        raise typer.Exit(code=1)
+    except GitHubError as exc:
+        console.print(f"[red]  \u2718 GitHub error:[/red] {exc}")
+        raise typer.Exit(code=1)
+    except typer.Exit:
+        raise
+    except Exception as exc:  # noqa: BLE001
+        console.print(f"[red]  \u2718 Unexpected error:[/red] {exc}")
+        raise typer.Exit(code=1)
 
 
 # ---------------------------------------------------------------------------
@@ -64,7 +198,7 @@ def generate(
 @config_app.command("init")
 def config_init() -> None:
     """Interactively create ~/.tracescribe/config.yaml."""
-    console.print("[bold]TraceScribe — Configuration Setup[/bold]\n")
+    console.print("[bold]TraceScribe \u2014 Configuration Setup[/bold]\n")
     console.print(
         "Press [bold]Enter[/bold] to accept the default shown in brackets.\n"
     )
@@ -121,7 +255,7 @@ def config_init() -> None:
     with _CONFIG_FILE.open("w") as fh:
         yaml.dump(config_data, fh, default_flow_style=False, allow_unicode=True)
 
-    console.print(f"\n[green]✓[/green] Config written to [bold]{_CONFIG_FILE}[/bold]")
+    console.print(f"\n[green]\u2713[/green] Config written to [bold]{_CONFIG_FILE}[/bold]")
 
 
 # ---------------------------------------------------------------------------
