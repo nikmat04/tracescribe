@@ -1,0 +1,158 @@
+{
+  "key": "INSTA-4821",
+  "fields": {
+    "summary": "Spring WebFlux Tracing Follow-Up",
+    "description": {
+      "version": 1,
+      "type": "doc",
+      "content": [
+        {
+          "type": "heading",
+          "attrs": { "level": 2 },
+          "content": [
+            { "type": "text", "text": "Overview" }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "This epic tracks follow-up improvements to Spring WebFlux tracing in the Instana Java agent. The initial WebFlux instrumentation (INSTA-3901) enabled basic span creation for reactive HTTP server endpoints, but several gaps remain: nested reactive operators are not always captured, Mono/Flux subscription chains lose context propagation, and the W3C Trace-Context header is not consistently forwarded on outbound WebClient calls."
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "attrs": { "level": 2 },
+          "content": [
+            { "type": "text", "text": "Motivation" }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Customers running Spring Boot 3 applications heavily rely on WebFlux for non-blocking workloads. Incomplete tracing leaves significant blind spots in distributed traces, making it impossible to diagnose latency spikes in reactive pipelines."
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "attrs": { "level": 2 },
+          "content": [
+            { "type": "text", "text": "Scope" }
+          ]
+        },
+        {
+          "type": "bulletList",
+          "content": [
+            {
+              "type": "listItem",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    { "type": "text", "text": "Propagate trace context through Reactor operator chains (flatMap, switchIfEmpty, onErrorResume)" }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "listItem",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    { "type": "text", "text": "Instrument Spring WebClient to inject W3C Trace-Context and Instana correlation headers on outbound requests" }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "listItem",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    { "type": "text", "text": "Support @ExceptionHandler methods as span error markers without duplicating the error span" }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "listItem",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    { "type": "text", "text": "Add integration tests against Spring Boot 3.2 and 3.3 snapshots" }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "attrs": { "level": 2 },
+          "content": [
+            { "type": "text", "text": "Acceptance Criteria" }
+          ]
+        },
+        {
+          "type": "bulletList",
+          "content": [
+            {
+              "type": "listItem",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    { "type": "text", "text": "A distributed trace triggered by a WebFlux endpoint that calls a downstream service via WebClient shows an unbroken span tree in the Instana UI." }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "listItem",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    { "type": "text", "text": "No span is duplicated or dropped when error handling operators (onErrorResume, onErrorReturn) are present in the reactive chain." }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "listItem",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    { "type": "text", "text": "All existing WebFlux sensor tests continue to pass. No performance regression > 1% in the Spring WebFlux benchmark suite." }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "components": [
+      { "name": "java-agent" }
+    ],
+    "fixVersions": [
+      { "name": "2026 Q2" }
+    ],
+    "assignee": {
+      "displayName": "Nikhil Mathew"
+    },
+    "status": {
+      "name": "In Progress"
+    },
+    "labels": ["tracing", "webflux", "java"]
+  }
+}
