@@ -82,6 +82,10 @@ def config_init() -> None:
         default="instana/instana-knowledge-center",
     )
     github_base_branch: str = typer.prompt("  Base branch", default="main")
+    github_base_url: str = typer.prompt(
+        "  GitHub API base URL",
+        default="https://api.github.com",
+    )
 
     # LLM
     console.rule("[cyan]LLM[/cyan]")
@@ -104,6 +108,7 @@ def config_init() -> None:
             "token": github_token,
             "repo": github_repo,
             "base_branch": github_base_branch,
+            "base_url": github_base_url,
         },
         "llm": {
             "provider": llm_provider,
@@ -153,6 +158,7 @@ def config_show() -> None:
     table.add_row("github", "token", _mask(cfg.github.token))
     table.add_row("github", "repo", cfg.github.repo)
     table.add_row("github", "base_branch", cfg.github.base_branch)
+    table.add_row("github", "base_url", cfg.github.base_url)
 
     # LLM
     table.add_row("llm", "provider", cfg.llm.provider)

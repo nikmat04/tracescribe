@@ -1,16 +1,22 @@
 # TraceScribe
 
-> **Auto-generate Instana Knowledge Center documentation from Jira epics — locally, with a single command.**
+TraceScribe is a CLI tool that turns a Jira epic into an Instana Knowledge Center documentation draft and, after review, opens a GitHub pull request.
 
-TraceScribe pulls an epic from Jira, drafts a structured Markdown documentation page using a local LLM (Ollama), lets you review and edit it, then opens a pull request against the Knowledge Center GitHub repo.
+## Features
 
-All data stays on your machine. The LLM runs locally via Ollama — nothing leaves your laptop.
+- Fetch epic metadata from Jira
+- Build the target Knowledge Center path automatically
+- Render a Markdown document from a structured template
+- Optionally use a local LLM via Ollama for prose sections
+- Let you review/edit before submission
+- Open a GitHub PR with the generated document
 
----
+## Requirements
 
-## Team Onboarding
+- Python 3.11+
+- [Ollama](https://ollama.com/) for local LLM generation (optional if using `--no-llm`)
 
-Follow these steps once to get up and running:
+## Installation
 
 ### 1. Install Ollama
 
@@ -18,86 +24,91 @@ Follow these steps once to get up and running:
 brew install ollama
 ```
 
-### 2. Pull the model
+### 2. Pull the default model
 
 ```bash
 ollama pull llama3.3:70b-instruct-q4_K_M
 ```
 
-> The model is ~24 GB. This only needs to be done once. Subsequent `generate` calls are instant.
-
 ### 3. Install TraceScribe
+
+From GitHub:
 
 ```bash
 pip install git+https://github.com/nikmat04/tracescribe.git
 ```
 
-Or pin to a stable release:
+For local development:
 
 ```bash
-pip install git+https://github.com/nikmat04/tracescribe.git@v0.1.0
+pip install -e .
 ```
 
-### 4. Configure
+## Quick Start
+
+Initialize your config:
 
 ```bash
 tracescribe config init
 ```
 
 This creates `~/.tracescribe/config.yaml` and prompts for your Jira PAT and GitHub token.  
-Alternatively, export the environment variables listed in [`.env.example`](.env.example).
-
-### 5. Generate docs
+Then run:
 
 ```bash
 tracescribe generate INSTA-4821
 ```
 
-TraceScribe will:
-1. Fetch the epic from Jira
-2. Generate structured documentation using the local LLM
-3. Show you a preview and let you review / edit
-4. Open a pull request against the Knowledge Center repo
+## CLI Usage
 
----
-
-## CLI Reference
-
-### `tracescribe generate <EPIC_KEY>`
-
-Generate a documentation page for a Jira epic.
-
-| Flag | Description |
-|------|-------------|
-| `--mock` | Use local fixture data instead of calling Jira. Useful for development and demos without a live Jira connection. |
-| `--dry-run` | Print the generated doc to stdout only; skip the interactive review and GitHub PR creation. Useful for scripting. |
-| `--no-llm` | Skip LLM generation. The output will be a filled-in template with placeholder stubs instead of LLM-written prose. |
-
-**Examples:**
+### Generate docs
 
 ```bash
-# Full flow against real Jira
 tracescribe generate INSTA-4821
+```
 
-# Development / demo — no Jira, no GitHub
+Options:
+
+- `--mock` — use fixture Jira data instead of calling Jira
+- `--dry-run` — print the generated doc to stdout and skip GitHub
+- `--no-llm` — skip LLM generation and leave template placeholders in place
+
+Example:
+
+```bash
 tracescribe generate INSTA-4821 --mock --dry-run
-
-# Full flow with fixture data, interactive review included
-tracescribe generate INSTA-4821 --mock
-
-# Generate without LLM (template stubs only)
-tracescribe generate INSTA-4821 --no-llm
 ```
 
-### `tracescribe config init`
+### Config commands
 
-Interactively create `~/.tracescribe/config.yaml`.
+Create config:
 
-### `tracescribe config show`
+```bash
+tracescribe config init
+```
 
-Print the resolved configuration (YAML + env var overrides) to the terminal.
+Show resolved config (with secrets masked):
 
----
+```bash
+tracescribe config show
+```
+
+## Environment Variables
+
+TraceScribe also supports environment variable fallbacks for config values:
+
+- `JIRA_BASE_URL`
+- `JIRA_PAT`
+- `GITHUB_TOKEN`
+- `GITHUB_REPO`
+
+## Development
+
+Run tests:
+
+```bash
+pytest
+```
 
 ## Configuration
 
@@ -113,59 +124,10 @@ github:
   token: ${GITHUB_TOKEN}
   repo: instana/instana-knowledge-center
   base_branch: main
+  base_url: https://api.github.com  # IBM GitHub: https://github.ibm.com/api/v3
 
 llm:
   provider: ollama
   model: llama3.3:70b-instruct-q4_K_M
   base_url: http://localhost:11434
 ```
-
-See [`.env.example`](.env.example) for all supported environment variables.
-
----
-
-## Project Structure
-
-```
-tracescribe/
-├── tracescribe/
-│   ├── __init__.py
-│   ├── cli.py
-│   ├── config.py
-│   ├── jira_client.py
-│   ├── path_builder.py
-│   ├── renderer.py
-│   ├── reviewer.py
-│   ├── prompts.py
-│   ├── github_client.py
-│   ├── llm/
-│   │   ├── base.py
-│   │   ├── ollama_provider.py
-│   │   └── factory.py
-│   ├── templates/
-│   │   └── epic_doc.md.jinja
-│   └── fixtures/
-│       └── sample_epic.json
-├── tests/
-│   └── test_path_builder.py
-├── pyproject.toml
-├── README.md
-└── .env.example
-```
-
----
-
-## Development
-
-```bash
-git clone https://github.com/nikmat04/tracescribe.git
-cd tracescribe
-pip install -e .
-tracescribe --help
-```
-
----
-
-## License
-
-MIT

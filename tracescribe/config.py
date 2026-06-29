@@ -40,6 +40,7 @@ class GitHubConfig:
     token: str
     repo: str                    # e.g. instana/instana-knowledge-center
     base_branch: str = "main"
+    base_url: str = "https://api.github.com"
 
 
 @dataclass
@@ -132,6 +133,7 @@ def load_config(config_path: Path = CONFIG_PATH) -> TraceScribeConfig:
         "GITHUB_REPO",
     )
     github_base_branch = _get(raw, "github", "base_branch", default="main")
+    github_base_url = _get(raw, "github", "base_url", default="https://api.github.com")
 
     llm_provider = _get(raw, "llm", "provider", default="ollama")
     llm_model = _get(raw, "llm", "model", default="llama3.3:70b-instruct-q4_K_M")
@@ -143,6 +145,7 @@ def load_config(config_path: Path = CONFIG_PATH) -> TraceScribeConfig:
             token=github_token,
             repo=github_repo,
             base_branch=github_base_branch,
+            base_url=github_base_url,
         ),
         llm=LLMConfig(
             provider=llm_provider,
