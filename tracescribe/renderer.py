@@ -14,8 +14,6 @@ from jinja2 import Environment, FileSystemLoader
 
 from tracescribe.jira_client import EpicData
 
-# Template directory resolved relative to this source file so the package
-# works correctly both as an editable install and as a built distribution.
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
 _TEMPLATE_NAME = "epic_doc.md.jinja"
 
@@ -32,27 +30,24 @@ def render_doc(
     epic: EpicData,
     doc_path: str,
     jira_base_url: str,
-    overview: str = "",
-    motivation: str = "",
-    technical_approach: str = "",
-    usage: str = "",
+    problem_statement: str = "",
+    summary: str = "",
+    config_yaml: str = "",
+    config_system_props: str = "",
+    config_env_vars: str = "",
+    hierarchical_structure: str = "",
+    precedence_rules: str = "",
+    example_scenarios: str = "",
+    config_before: str = "",
+    config_after: str = "",
+    technical_implementation: str = "",
+    architecture_diagram: str = "",
+    business_benefits: str = "",
+    business_use_cases: str = "",
+    qa_notes: str = "",
+    communication_plan: str = "",
 ) -> str:
-    """Render the epic documentation template to a Markdown string.
-
-    Args:
-        epic: Populated :class:`~tracescribe.jira_client.EpicData` instance.
-        doc_path: Repo-relative path where the doc will be committed, e.g.
-            ``docs/product_overview/tracing/java/epics/2026/q2/springwebflux_fup/index.md``.
-        jira_base_url: Base URL of the Jira instance, e.g. ``https://jsw.ibm.com``.
-        overview: LLM-generated overview prose.  Falls back to stub if empty.
-        motivation: LLM-generated motivation prose.  Falls back to stub if empty.
-        technical_approach: LLM-generated technical-approach prose.  Falls back
-            to stub if empty.
-        usage: LLM-generated configuration/usage prose.  Falls back to stub if empty.
-
-    Returns:
-        Rendered Markdown string ready to be written to a file or printed.
-    """
+    """Render the epic documentation template to a Markdown string."""
     template = _jinja_env.get_template(_TEMPLATE_NAME)
 
     context = {
@@ -60,10 +55,22 @@ def render_doc(
         "doc_path": doc_path,
         "jira_base_url": jira_base_url.rstrip("/"),
         "generated_date": date.today().isoformat(),
-        "overview": overview or _STUB,
-        "motivation": motivation or _STUB,
-        "technical_approach": technical_approach or _STUB,
-        "usage": usage or _STUB,
+        "problem_statement": problem_statement or _STUB,
+        "summary": summary or _STUB,
+        "config_yaml": config_yaml or _STUB,
+        "config_system_props": config_system_props or _STUB,
+        "config_env_vars": config_env_vars or _STUB,
+        "hierarchical_structure": hierarchical_structure or _STUB,
+        "precedence_rules": precedence_rules or _STUB,
+        "example_scenarios": example_scenarios or _STUB,
+        "config_before": config_before or _STUB,
+        "config_after": config_after or _STUB,
+        "technical_implementation": technical_implementation or _STUB,
+        "architecture_diagram": architecture_diagram or _STUB,
+        "business_benefits": business_benefits or _STUB,
+        "business_use_cases": business_use_cases or _STUB,
+        "qa_notes": qa_notes or _STUB,
+        "communication_plan": communication_plan or _STUB,
     }
 
     return template.render(context)

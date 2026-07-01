@@ -10,32 +10,116 @@ generated: {{ generated_date }}
 
 # {{ epic.summary }}
 
-**Epic:** `{{ epic.key }}` | **Assignee:** {{ epic.assignee }} | **Status:** {{ epic.status }}
-**Component:** {{ epic.components[0] if epic.components else "general" }} | **Quarter:** {{ epic.fix_versions[0] if epic.fix_versions else "Unknown" }}
+**Feature Release:** {{ epic.summary }}
+**Release Version:** {{ epic.components[0] if epic.components else "Java Trace Sensor" }} TBD
+**Owner:** Java Tracer Team
+**Related Tickets:**
+
+- [{{ epic.key }}]({{ jira_base_url }}/browse/{{ epic.key }})
 
 ---
 
-## Overview
+## Problem Statement
 
-{{ overview }}
+{{ problem_statement }}
 
-## Motivation
+---
 
-{{ motivation }}
+## Summary
 
-## Technical Approach
+{{ summary }}
 
-{{ technical_approach }}
+---
 
-## Configuration & Usage
+## Configuration Examples
 
-{{ usage }}
+### Agent Configuration (YAML)
+
+{{ config_yaml }}
+
+### System Properties
+
+{{ config_system_props }}
+
+### Environment Variables
+
+{{ config_env_vars }}
+
+---
+
+## Hierarchical Structure
+
+{{ hierarchical_structure }}
+
+---
+
+## Precedence Rules
+
+{{ precedence_rules }}
+
+---
+
+## Example Scenarios
+
+{{ example_scenarios }}
+
+---
+
+## Before / After Comparison
+
+### Before
+
+{{ config_before }}
+
+### After
+
+{{ config_after }}
+
+---
+
+## Technical Implementation
+
+{{ technical_implementation }}
+
+---
+
+## Architecture / Flow Diagram
+
+{{ architecture_diagram }}
+
+---
+
+## Business Outcome
+
+### Benefits
+
+{{ business_benefits }}
+
+### Use Cases
+
+{{ business_use_cases }}
+
+---
+
+## QA & Testing Notes
+
+{{ qa_notes }}
+
+---
+
+## Communication Plan
+
+{{ communication_plan }}
+
+---
 
 ## Acceptance Criteria
 
 {{ epic.description }}
 
-## Related Links
+---
 
-- Jira Epic: {{ jira_base_url }}/browse/{{ epic.key }}
-- Labels: {{ epic.labels | join(", ") if epic.labels else "none" }}
+## Related Documentation
+
+- Jira Epic: [{{ epic.key }}]({{ jira_base_url }}/browse/{{ epic.key }})
+{% if epic.labels %}- Labels: {{ epic.labels | join(", ") }}{% endif %}
